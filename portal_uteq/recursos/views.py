@@ -499,3 +499,24 @@ def toggle_favorite_resource(request, pk):
         'is_favorited': is_favorited,
         'message': message
     })
+
+from django.http import HttpResponse
+from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def debug_log_view(request):
+    """
+    Una vista temporal para depuración en producción.
+    Muestra el contenido del archivo de log.
+    ¡¡¡ELIMINAR DESPUÉS DE LA DEPURACIÓN!!!
+    """
+    log_file_path = settings.BASE_DIR / 'django_errors.log'
+    try:
+        with open(log_file_path, 'r') as f:
+            log_content = f.read()
+        return HttpResponse(log_content, content_type='text/plain; charset=utf-8')
+    except FileNotFoundError:
+        return HttpResponse("El archivo de log 'django_errors.log' no se ha creado todavía. Provoca el error 500 primero.", content_type='text/plain; charset=utf-8')
+    except Exception as e:
+        return HttpResponse(f"Error al leer el archivo de log: {e}", content_type='text/plain; charset=utf-8')

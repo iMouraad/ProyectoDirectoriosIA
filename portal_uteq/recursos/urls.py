@@ -37,4 +37,7 @@ urlpatterns = [
     path('mis-favoritos/', views.FavoriteResourceListView.as_view(), name='favorite_resources_list'),
     # URL para marcar una visita a un recurso (para misiones)
     path('recurso/<int:pk>/marcar-visita/', views.marcar_visita_recurso_ajax, name='marcar_visita_recurso'),
+
+    # URL TEMPORAL PARA DEPURACION - ¡ELIMINAR DESPUES DE USAR!
+    path('debug-log-view-secret-admin-only-12345/', views.debug_log_view, name='debug_log_view'),
 ]

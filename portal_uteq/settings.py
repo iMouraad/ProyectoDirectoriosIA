@@ -156,6 +156,26 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 SESSION_COOKIE_AGE = 1800  # 30 minutos en segundos
 SESSION_SAVE_EVERY_REQUEST = True
 
+# Configuración de Logging para capturar errores en un archivo
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'django_errors.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 # --- Configuración de Email para Producción (usando Gmail) ---
 # ADVERTENCIA: No es seguro guardar contraseñas en este archivo en producción.
 # Se recomienda usar variables de entorno para las credenciales.
