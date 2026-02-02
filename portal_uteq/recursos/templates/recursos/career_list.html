@@ -1,0 +1,36 @@
+{% extends "recursos/layout_dashboard.html" %}
+
+{% block title %}Lista de Carreras - UTEQ{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Carreras Disponibles</h1>
+<div class="row">
+    {% for carrera in carreras %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if carrera.imagen %}
+                    <img src="{{ carrera.imagen.url }}" class="card-img-top" alt="Imagen de {{ carrera.nombre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="bi bi-image-alt fs-1 text-muted"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ carrera.nombre }}</h5>
+                    <p class="card-text flex-grow-1">{{ carrera.descripcion|default:"No hay descripción disponible." }}</p>
+                    <a href="{% url 'recursos:resource_type_list' pk=carrera.pk %}" class="btn btn-primary mt-auto">Ver Recursos</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">¡Aún no hay carreras!</h4>
+                <p>Parece que no se han registrado carreras todavía. Puedes empezar por añadirlas en el panel de administración.</p>
+                <hr>
+                <a href="/admin/recursos/carrera/add/" class="btn btn-outline-primary">Añadir Carrera</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

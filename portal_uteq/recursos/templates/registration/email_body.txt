@@ -1,0 +1,11 @@
+Hola {{ user.first_name }},
+
+¡Gracias por registrarte en el Directorio de Recursos de la UTEQ!
+
+Tu nombre de usuario es: {{ user.username }}
+Tu contraseña temporal es: {{ temporary_password }}
+
+Por favor, úsala para iniciar sesión y considera cambiarla por una de tu elección en tu perfil.
+
+Saludos,
+El equipo de UTEQ

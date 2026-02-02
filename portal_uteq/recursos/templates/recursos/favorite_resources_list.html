@@ -1,0 +1,65 @@
+{% extends "recursos/layout_dashboard.html" %}
+{% load static %}
+
+{% block title %}Mis Recursos Favoritos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-0">Mis Recursos Favoritos</h1>
+            <p class="lead">Aquí tienes la lista de recursos que has guardado como favoritos.</p>
+        </div>
+    </div>
+
+    {% if recursos_favoritos %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for recurso in recursos_favoritos %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                {% if recurso.imagen %}
+                    <img src="{{ recurso.imagen.url }}" class="card-img-top" alt="Imagen de {{ recurso.nombre }}" style="height: 180px; object-fit: cover;">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                        <i class="bi bi-image-alt fs-1 text-muted"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-1">{{ recurso.nombre }}</h5>
+                    <p class="card-text text-muted small mb-2">{{ recurso.get_tipo_display }}</p>
+                    <p class="card-text text-truncate">{{ recurso.descripcion }}</p>
+                    <div class="mt-auto">
+                        <a href="{% url 'recursos:resource_detail' recurso.pk %}" class="btn btn-primary btn-sm w-100">Ver Detalle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Paginación #}
+    {% if is_paginated %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ page_obj.number }} de {{ page_obj.num_pages }}</span></li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        Aún no tienes recursos guardados en tu lista de favoritos. ¡Explora y añade algunos!
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

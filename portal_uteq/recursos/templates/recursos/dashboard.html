@@ -1,0 +1,222 @@
+{% extends "recursos/layout_dashboard.html" %}
+{% load auth_extras %}
+
+{% block title %}Dashboard - Directorio de Recursos{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Bienvenido/a, {{ user.first_name|default:user.username }}</h1>
+
+<div class="row mb-4">
+    {# El panel de bienvenida es para todos #}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">Tareas de {{ user.first_name|default:user.username }}</h5>
+                <p class="card-text text-muted">Aquí encontrarás un resumen de tu actividad y enlaces rápidos relevantes para tu rol.</p>
+                {% if user.is_authenticated %}
+                <hr>
+                <div class="d-flex justify-content-around mt-3">
+                    <div class="text-center">
+                        <i class="bi bi-award-fill fs-3 text-warning"></i>
+                        <p class="mb-0 fw-bold">{{ user_puntos }}</p>
+                        <small class="text-muted">Puntos</small>
+                    </div>
+                    <div class="text-center">
+                        <i class="bi bi-graph-up-arrow fs-3 text-success"></i>
+                        <p class="mb-0 fw-bold">{{ user_racha }}</p>
+                        <small class="text-muted">Días de Racha</small>
+                    </div>
+                </div>
+                {% if misiones_diarias %}
+                <div class="mt-auto pt-3 text-center">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#misionesModal">
+                        <i class="bi bi-list-check me-2"></i> Ver Misiones Diarias
+                    </button>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {# Historial de Visitas (al lado de bienvenida) #}
+    {% if historial_visitas %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title"><i class="bi bi-clock-history me-2"></i>Historial de Visitas</h5>
+                <p class="card-text text-muted">Tus últimos recursos visitados.</p>
+                <div class="list-group list-group-flush mt-auto">
+                    {% for visita in historial_visitas %}
+                        <a href="{% url 'recursos:resource_detail' visita.recurso.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ visita.recurso.nombre }}</h6>
+                                <small class="text-muted">Visitado {{ visita.fecha_visita|timesince }} atrás</small>
+                            </div>
+                            <span class="badge bg-info rounded-pill">{{ visita.recurso.get_tipo_display }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
+
+
+{% if dashboard_type == 'admin_gestor' %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="card-title h5"><i class="bi bi-person-workspace me-2"></i>Panel de Administración/Gestión</h2>
+            <p>Tienes privilegios administrativos. Aquí un resumen de las tareas importantes:</p>
+            <div class="row mt-4">
+                <div class="col-lg-4 mb-3">
+                    <h6 class="text-muted mb-3">Estadísticas</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total de carreras
+                            <span class="badge bg-primary rounded-pill">{{ total_carreras }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Recursos aprobados
+                            <span class="badge bg-success rounded-pill">{{ total_recursos }}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <h6 class="text-muted mb-3">Recursos Pendientes</h6>
+                    <div class="card bg-warning text-white h-100">
+                        <div class="card-body text-center p-3">
+                            <p class="card-text display-6 fw-bold mb-0">{{ recursos_pendientes }}</p>
+                            <p class="card-text small">esperando aprobación</p>
+                            {% if recursos_pendientes > 0 %}
+                                <a href="/admin/recursos/recurso/?estado__exact=pendiente" class="btn btn-light btn-sm mt-2 stretched-link">Revisar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <h6 class="text-muted mb-3">Top Carreras</h6>
+                    <ul class="list-group">
+                        {% for carrera_con_recursos in carreras_con_recursos %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span title="{{ carrera_con_recursos.nombre }}">{{ carrera_con_recursos.nombre|truncatechars:20 }}</span>
+                                <span class="badge bg-secondary rounded-pill">{{ carrera_con_recursos.num_recursos }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">No hay datos.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% elif dashboard_type == 'docente' %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="card-title h5"><i class="bi bi-lightbulb me-2"></i>Tu Panel Docente</h2>
+            <p>Aquí puedes gestionar tus sugerencias y ver recursos relevantes para tu carrera:</p>
+            <div class="row mt-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-clock me-2"></i>Mis Sugerencias Pendientes</h5>
+                            <p class="card-text fs-2 fw-bold">{{ mis_sugerencias_pendientes }}</p>
+                            <p class="card-text">Sugerencias esperando aprobación.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-mortarboard me-2"></i>Recursos Aprobados de mi Carrera</h5>
+                            <ul class="list-group list-group-flush">
+                                {% for recurso in recursos_mi_carrera_aprobados %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ recurso.nombre }}
+                                        <span class="badge bg-success rounded-pill">{{ recurso.get_tipo_display }}</span>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item">No hay recursos aprobados para tu carrera aún.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% else %} {# dashboard_type == 'estudiante' o no tiene rol #}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="card-title h5"><i class="bi bi-book me-2"></i>Tu Panel de Estudiante</h2>
+            {% if mi_carrera %}
+                <p>Explora los recursos de tu carrera: <strong>{{ mi_carrera.nombre }}</strong></p>
+                <ul class="list-group mt-3">
+                    {% for recurso in recursos_mi_carrera %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{{ recurso.url_externa }}" target="_blank" class="text-decoration-none">
+                                {{ recurso.nombre }}
+                            </a>
+                            <span class="badge bg-secondary">{{ recurso.get_tipo_display }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">No hay recursos aprobados para tu carrera aún.</li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-4 text-center">
+                    <a href="{% url 'recursos:career_list' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-journals me-2"></i>Explorar Otras Carreras
+                    </a>
+                </div>
+            {% else %}
+                <p>Bienvenido/a. Parece que aún no tienes una carrera asignada. ¡Explora los recursos!</p>
+                <div class="mt-4 text-center">
+                    <a href="{% url 'recursos:career_list' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-journals me-2"></i>Explorar Todas las Carreras
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+{% if user.is_authenticated and misiones_diarias %}
+<!-- Modal Misiones Diarias -->
+<div class="modal fade" id="misionesModal" tabindex="-1" aria-labelledby="misionesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="misionesModalLabel"><i class="bi bi-list-check me-2"></i>Misiones Diarias</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Completa estas tareas para ganar puntos y seguir con tu racha.</p>
+        <ul class="list-group list-group-flush">
+            {% for mision_diaria in misiones_diarias %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ mision_diaria.mision.nombre }}</strong>
+                    <p class="mb-0 text-muted small">{{ mision_diaria.mision.descripcion }}</p>
+                </div>
+                {% if mision_diaria.completada %}
+                    <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Completada (+{{ mision_diaria.mision.puntos_recompensa }} pts)</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark rounded-pill">Pendiente (+{{ mision_diaria.mision.puntos_recompensa }} pts)</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

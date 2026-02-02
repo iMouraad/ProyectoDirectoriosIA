@@ -1,0 +1,28 @@
+{% extends "recursos/layout_dashboard.html" %}
+
+{% block title %}Tipos de Recurso para {{ carrera.nombre }} - UTEQ{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Recursos para: <span class="text-primary">{{ carrera.nombre }}</span></h1>
+
+<div class="mb-4">
+    <a href="{% url 'recursos:career_list' %}" class="btn btn-outline-secondary">← Volver a la lista de Carreras</a>
+</div>
+
+<h2 class="mb-3">Selecciona un tipo de recurso</h2>
+
+<div class="row">
+    {% for tipo in tipos_de_recurso %}
+        <div class="col-lg-6 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body d-flex flex-column">
+                    <i class="bi {{ tipo.icon }} fs-1 mb-3 text-primary"></i>
+                    <h5 class="card-title">{{ tipo.display }}</h5>
+                    <p class="card-text text-muted small flex-grow-1">{{ tipo.description }}</p>
+                    <a href="{% url 'recursos:resource_list_by_type' carrera.id tipo.key %}" class="btn btn-primary stretched-link mt-auto">Ver Recursos</a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

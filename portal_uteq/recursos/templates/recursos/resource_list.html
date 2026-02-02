@@ -1,0 +1,390 @@
+{% extends "recursos/layout_dashboard.html" %}
+
+{% block title %}Recursos para {{ carrera.nombre }} - UTEQ{% endblock %}
+
+{% block content %}
+<style>
+    .ai-card {
+        background-color: #ffffff;
+        border-radius: 1.5rem; /* Bordes redondeados grandes */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 10px rgba(0, 0, 0, 0.02); /* Sombra suave */
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative; /* Añadido para posicionar elementos hijos */
+    }
+    .ai-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.04);
+    }
+    .ai-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .ai-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.75rem; /* Esquinas redondeadas para el icono */
+        object-fit: cover;
+    }
+    .ai-title h5 {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.1rem;
+    }
+    .ai-title small {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    .ai-card .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.7em;
+    }
+    .rating-stars {
+        color: #FFC107;
+    }
+    .rating-stars .bi-star {
+        color: #e0e0e0;
+    }
+    .ai-card hr {
+        border-top: 1px solid #e9ecef;
+        margin: 1rem 0;
+    }
+    .ai-card-section h6 {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        color: #343a40;
+    }
+    .ai-card-section ul {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 1.5rem;
+    }
+    .ai-card-section ul li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    .ai-card-section .icon-check-primary {
+        color: #5e35b1; /* Tono morado */
+    }
+    .ai-card-section .icon-check-info {
+        color: #039be5; /* Tono azul */
+    }
+    .ai-card-footer {
+        margin-top: auto; /* Empuja el footer hacia abajo */
+        text-align: right;
+    }
+    .ai-card-footer a {
+        font-size: 0.85rem;
+        text-decoration: none;
+        color: #6c757d;
+        transition: color 0.2s;
+    }
+    .ai-card-footer a:hover {
+        color: #343a40;
+    }
+    .ai-card-footer .btn-primary {
+        color: #ffffff !important; /* Asegurar que el texto sea blanco */
+    }
+    .ai-card-footer .btn-outline-primary {
+        color: #0d6efd !important; /* Usar el color primario de Bootstrap para el texto */
+        border-color: #0d6efd !important; /* Asegurar el borde del color primario */
+    }
+</style>
+
+<h1 class="mb-4">Recursos de <span class="text-info">{{ tipo_display }}</span> para: <span class="text-primary">{{ carrera.nombre }}</span></h1>
+
+<div class="mb-4">
+    <a href="{% url 'recursos:resource_type_list' carrera.id %}" class="btn btn-outline-secondary">← Volver a Tipos de Recurso</a>
+</div>
+
+<!-- Formulario de Búsqueda y Ordenamiento -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="" class="row g-3 align-items-center">
+            <div class="col-md">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o descripción..." value="{{ request.GET.q }}">
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <div class="input-group">
+                    <label class="input-group-text" for="sort-select">Ordenar por:</label>
+                    <select name="sort" class="form-select" id="sort-select" onchange="this.form.submit()">
+                        <option value="recientes" {% if request.GET.sort == 'recientes' %}selected{% endif %}>Más Recientes</option>
+                        <option value="valorados" {% if request.GET.sort == 'valorados' %}selected{% endif %}>Mejor Valorados</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    {% for recurso in recursos %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="ai-card">
+            {% if user.is_authenticated and user.perfil %}
+            <button class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2 favorite-toggle-btn" 
+                    data-resource-id="{{ recurso.pk }}" 
+                    style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                <i class="bi {% if recurso.id in favorite_resource_ids %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+            </button>
+            {% endif %}
+            <!-- Encabezado de la Tarjeta -->
+            <div class="ai-card-header">
+                {% if recurso.imagen %}
+                    <img src="{{ recurso.imagen.url }}" class="ai-icon" alt="Icono de {{ recurso.nombre }}">
+                {% else %}
+                    <div class="ai-icon bg-secondary"></div>
+                {% endif %}
+                <div class="ai-title flex-grow-1">
+                    <h5 class="card-title">{{ recurso.nombre }}</h5>
+                    <small>{{ recurso.get_tipo_display }}</small>
+                </div>
+                <span class="badge bg-success-subtle text-success-emphasis rounded-pill">Gratuito</span>
+            </div>
+
+            <!-- Calificación -->
+            <div class="d-flex align-items-center mb-2 rating-stars">
+                {% if recurso.avg_rating %}
+                    <span class="fw-bold me-2 text-dark">{{ recurso.avg_rating|floatformat:1 }}</span>
+                    {% for i in "12345" %}
+                        <i class="bi {% if forloop.counter <= recurso.avg_rating|floatformat:0 %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted small">Sin valoraciones</span>
+                {% endif %}
+            </div>
+
+            <!-- Línea divisoria -->
+            <hr>
+
+            <!-- Secciones de Información -->
+            <div class="ai-card-section">
+                {% if recurso.uso_ideal %}
+                <h6>Uso Ideal</h6>
+                <ul>
+                    {% for uso in recurso.uso_ideal.splitlines %}
+                    <li><i class="bi bi-check-circle-fill icon-check-primary"></i> {{ uso }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <h6>Más Información</h6>
+                <p class="small text-muted" style="font-size: 0.9rem;">
+                    {{ recurso.descripcion|truncatewords:20 }}
+                </p>
+            </div>
+            
+            <!-- Pie de la Tarjeta -->
+            <div class="ai-card-footer d-flex justify-content-between align-items-center">
+                <div>
+                    {% if recurso.descripcion|wordcount > 20 %}
+                    <a href="#" class="btn btn-link text-primary p-0" data-bs-toggle="modal" data-bs-target="#modal-{{ recurso.pk }}">
+                        Ver más
+                    </a>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="#" class="btn btn-primary btn-sm me-2 external-resource-link" 
+                       data-resource-id="{{ recurso.pk }}" 
+                       data-external-url="{{ recurso.url_externa }}" 
+                       rel="noopener noreferrer">
+                        Sitio Web Oficial <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    </a>
+                    <a href="{% url 'recursos:resource_detail' recurso.pk %}" class="btn btn-sm btn-outline-primary">
+                        Ver Comentarios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para la descripción completa -->
+    <div class="modal fade" id="modal-{{ recurso.pk }}" tabindex="-1" aria-labelledby="modalLabel-{{ recurso.pk }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel-{{ recurso.pk }}">{{ recurso.nombre }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Descripción Completa</strong></p>
+                    <p>{{ recurso.descripcion|linebreaksbr }}</p>
+                    <hr>
+                    {% if recurso.uso_ideal %}
+                    <p><strong>Uso Ideal</strong></p>
+                    <ul>
+                        {% for uso in recurso.uso_ideal.splitlines %}
+                        <li>{{ uso }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ recurso.url_externa }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        Ir al Sitio Oficial <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">¡Aún no hay recursos!</h4>
+            <p>Parece que no se han registrado recursos para esta carrera todavía. Puedes empezar por añadirlos en el panel de administración.</p>
+            <hr>
+            <a href="/admin/recursos/recurso/add/" class="btn btn-outline-primary">Añadir Recurso</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+
+    // Función para actualizar el estado del botón de favorito
+    function updateFavoriteButton(resourceId, isFavorited) {
+        const buttonsToUpdate = document.querySelectorAll(`.favorite-toggle-btn[data-resource-id="${resourceId}"]`);
+        buttonsToUpdate.forEach(button => {
+            const icon = button.querySelector('i');
+            if (isFavorited) {
+                icon.classList.remove('bi-star');
+                icon.classList.add('bi-star-fill');
+            } else {
+                icon.classList.remove('bi-star-fill');
+                icon.classList.add('bi-star');
+            }
+        });
+    }
+
+    // --- Lógica para el clic en los botones de favoritos ---
+    const favoriteButtons = document.querySelectorAll('.favorite-toggle-btn');
+    favoriteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const self = this; // Guardar referencia al botón presionado
+            const resourceId = self.dataset.resourceId;
+            const url = "{% url 'recursos:toggle_favorite_resource' 0 %}".replace('0', resourceId);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Actualizar el botón en la página actual
+                    updateFavoriteButton(resourceId, data.is_favorited);
+
+                    // Notificar a otras pestañas a través de localStorage
+                    localStorage.setItem('favorite_toggled', JSON.stringify({
+                        resourceId: resourceId,
+                        isFavorited: data.is_favorited
+                    }));
+
+                    // --- LÓGICA DE REORDENAMIENTO ---
+                    if (data.is_favorited) {
+                        const cardColumn = self.closest('.col-lg-4');
+                        if (cardColumn) {
+                            cardColumn.parentElement.prepend(cardColumn);
+                        }
+                    }
+                } else {
+                    console.error('Error al actualizar favoritos:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error en la petición fetch:', error);
+            });
+        });
+    });
+
+    // --- Lógica para escuchar cambios de localStorage desde otras pestañas ---
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'favorite_toggled' && event.newValue) {
+            try {
+                const data = JSON.parse(event.newValue);
+                // Actualizar el botón si el recurso ID coincide con alguno en esta página
+                updateFavoriteButton(data.resourceId, data.isFavorited);
+
+                // --- LÓGICA DE REORDENAMIENTO (desde otra pestaña) ---
+                if (data.is_favorited) {
+                    const button = document.querySelector(`.favorite-toggle-btn[data-resource-id="${data.resourceId}"]`);
+                    if (button) {
+                        const cardColumn = button.closest('.col-lg-4');
+                        if (cardColumn) {
+                            cardColumn.parentElement.prepend(cardColumn);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error al parsear datos de localStorage:', e);
+            }
+        }
+    });
+
+    // --- Lógica para marcar visita a recurso externo ---
+    const externalLinks = document.querySelectorAll('.external-resource-link');
+    externalLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const resourceId = this.dataset.resourceId;
+            const externalUrl = this.dataset.externalUrl;
+            const url = "{% url 'recursos:marcar_visita_recurso' 0 %}".replace('0', resourceId);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Visita registrada para el recurso:', resourceId);
+                } else {
+                    console.error('Error al registrar la visita:', data.message);
+                }
+                // Abrir la URL externa independientemente del resultado del fetch
+                window.open(externalUrl, '_blank');
+            })
+            .catch(error => {
+                console.error('Error en la petición fetch para registrar visita:', error);
+                // Abrir la URL externa incluso si hay un error de red
+                window.open(externalUrl, '_blank');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

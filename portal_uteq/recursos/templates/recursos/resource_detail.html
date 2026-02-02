@@ -1,0 +1,252 @@
+{% extends "recursos/layout_dashboard.html" %}
+{% load auth_extras %}
+
+{% block title %}{{ recurso.nombre }} - Detalle del Recurso{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Fila para el Título y Botón de Volver -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-0">{{ recurso.nombre }}</h1>
+            <span class="badge bg-primary">{{ recurso.get_tipo_display }}</span>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">← Volver</a>
+        </div>
+    </div>
+
+    <!-- Fila para los Detalles del Recurso -->
+    <div class="row">
+        <!-- Columna de la Imagen y Acciones -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                {% if recurso.imagen %}
+                    <img src="{{ recurso.imagen.url }}" class="card-img-top" alt="Imagen de {{ recurso.nombre }}">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                        <i class="bi bi-image-alt fs-1 text-muted"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <a href="{{ recurso.url_externa }}" class="btn btn-success w-100 mb-2" target="_blank" rel="noopener noreferrer">
+                        <i class="bi bi-box-arrow-up-right me-2"></i>Ir al Recurso
+                    </a>
+                    {% if user.is_authenticated %}
+                    <button id="favorite-button" class="btn btn-outline-primary w-100" data-resource-id="{{ recurso.pk }}" data-is-favorited="{{ is_favorited }}">
+                        <i class="bi {% if is_favorited %}bi-star-fill{% else %}bi-star{% endif %} me-2"></i>
+                        <span id="favorite-text">{% if is_favorited %}En Favoritos{% else %}Añadir a Favoritos{% endif %}</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de Descripción y Valoraciones -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Descripción</h5>
+                    <p class="card-text">{{ recurso.descripcion }}</p>
+                    <hr>
+                    <h5 class="card-title">Valoraciones de Usuarios</h5>
+                    {% if average_rating %}
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="fs-4 fw-bold me-2">{{ average_rating|floatformat:1 }}</span>
+                            <!-- Estrellas (simplificado) -->
+                            {% for i in "12345" %}
+                                <i class="bi {% if forloop.counter <= average_rating|floatformat:0 %}bi-star-fill{% else %}bi-star{% endif %}" style="color: {% if forloop.counter <= average_rating|floatformat:0 %}#FFC107 !important{% else %}#6c757d !important{% endif %};"></i>
+                            {% endfor %}
+                            <span class="ms-2 text-muted">({{ valoraciones.count }} valoraci{% if valoraciones.count != 1 %}ones{% else %}ón{% endif %})</span>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Este recurso aún no ha sido valorado. ¡Sé el primero!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sección para Dejar un Comentario -->
+            <div class="card mt-4" id="valoracion-section">
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        {% if user_has_commented %}
+                            <h5 class="card-title">Gracias por tu valoración</h5>
+                            <p class="text-muted">Ya has dejado una reseña para este recurso.</p>
+                        {% else %}
+                            <h5 class="card-title">Deja tu Valoración</h5>
+                            <form method="post" id="valoracion-form">
+                                {% csrf_token %}
+                                <div id="form-errors" class="alert alert-danger d-none"></div>
+                                <div class="mb-3">
+                                    <label class="form-label d-block">{{ form.puntuacion.label }}</label>
+                                    <div class="d-flex align-items-center">
+                                        {% for radio in form.puntuacion %}
+                                        <div class="form-check form-check-inline me-3">
+                                            {{ radio.tag }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }} <i class="bi bi-star-fill" style="color: #FFC107;"></i>
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.puntuacion.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.puntuacion.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.comentario.id_for_label }}" class="form-label">{{ form.comentario.label }}</label>
+                                    {{ form.comentario }}
+                                    {% if form.comentario.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.comentario.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <button type="submit" class="btn btn-primary">Enviar Valoración</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <p><a href="{% url 'login' %}?next={{ request.path }}">Inicia sesión</a> para dejar una valoración.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fila para la Lista de Comentarios -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3 class="mb-3">Comentarios</h3>
+            <div id="comment-list">
+                {% for valoracion in valoraciones %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ valoracion.user.get_full_name|default:valoracion.user.username }}</strong>
+                                <small class="text-muted">{{ valoracion.fecha_creacion|date:"d M, Y" }}</small>
+                            </div>
+                            <div class="mb-2">
+                                {% for i in "12345" %}
+                                    <i class="bi {% if forloop.counter <= valoracion.puntuacion %}bi-star-fill{% else %}bi-star{% endif %}" style="color: #FFC107;"></i>
+                                {% endfor %}
+                            </div>
+                            <p class="card-text">{{ valoracion.comentario|linebreaks }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="alert alert-light" id="no-comments-alert">No hay comentarios todavía.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Lógica para el formulario de valoración ---
+    const form = document.getElementById('valoracion-form');
+    if (form) { // Solo si el formulario existe, se le asigna el listener
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('✅ Formulario enviado. Iniciando petición fetch...');
+
+            const formData = new FormData(form);
+            const url = "{% url 'recursos:agregar_valoracion_ajax' recurso.pk %}";
+            const csrfToken = formData.get('csrfmiddlewaretoken');
+            const errorDiv = document.getElementById('form-errors');
+            errorDiv.classList.add('d-none');
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('👍 Valoración enviada con éxito.');
+                    const formSection = document.getElementById('valoracion-section');
+                    if(formSection) {
+                        formSection.innerHTML = `
+                            <div class="card-body">
+                                <h5 class="card-title">Gracias por tu valoración</h5>
+                                <p class="text-muted">Tu opinión ha sido registrada.</p>
+                            </div>`;
+                    }
+                    // Actualizar dinámicamente la lista de comentarios (simplificado, recargar es más fácil)
+                    // Opcional: añadir el nuevo comentario a la lista sin recargar.
+                } else {
+                    let errorMessages = '';
+                    if (data.message) {
+                        errorMessages = `<p>${data.message}</p>`;
+                    } else if (data.errors) {
+                        for (const field in data.errors) {
+                            errorMessages += `<p class="mb-1">${data.errors[field][0]}</p>`;
+                        }
+                    }
+                    errorDiv.innerHTML = errorMessages;
+                    errorDiv.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('🚨 Error en la petición fetch de valoración:', error);
+            });
+        });
+    }
+
+    // --- Lógica para el botón de favoritos (ahora se ejecuta siempre) ---
+    const favoriteButton = document.getElementById('favorite-button');
+    if (favoriteButton) {
+        favoriteButton.addEventListener('click', function() {
+            const resourceId = this.dataset.resourceId;
+            const url = "{% url 'recursos:toggle_favorite_resource' 0 %}".replace('0', resourceId);
+            const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (!csrfTokenInput) {
+                console.error('CSRF token not found!');
+                return;
+            }
+            const csrfToken = csrfTokenInput.value;
+            const favoriteIcon = this.querySelector('i');
+            const favoriteText = this.querySelector('#favorite-text');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.dataset.isFavorited = data.is_favorited ? 'True' : 'False';
+                    if (data.is_favorited) {
+                        favoriteIcon.classList.remove('bi-star');
+                        favoriteIcon.classList.add('bi-star-fill');
+                        favoriteText.textContent = 'En Favoritos';
+                    } else {
+                        favoriteIcon.classList.remove('bi-star-fill');
+                        favoriteIcon.classList.add('bi-star');
+                        favoriteText.textContent = 'Añadir a Favoritos';
+                    }
+                } else {
+                    console.error('Error al actualizar favoritos:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error de red o del servidor en favoritos:', error);
+            });
+        });
+    }
+});
+</script>
+{% endblock page_scripts %}
