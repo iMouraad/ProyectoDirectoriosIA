@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',  # Para la gestión de archivos multimedia
     'portal_uteq.recursos',
+    'cloudinary',          # Para la API de Cloudinary
 ]
 
 MIDDLEWARE = [
@@ -142,9 +144,13 @@ LOGIN_REDIRECT_URL = 'recursos:dashboard'
 LOGOUT_REDIRECT_URL = 'recursos:home'
 
 
-# Configuración de Archivos Media (subidos por el usuario)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'mediafiles'
+# Configuración de Archivos Media (subidos por el usuario) con Cloudinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Configuraci�n de Timeout de Sesi�n por Inactividad
 SESSION_COOKIE_AGE = 1800  # 30 minutos en segundos
