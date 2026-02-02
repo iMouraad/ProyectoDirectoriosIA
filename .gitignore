@@ -7,7 +7,6 @@ db.sqlite3
 
 # Archivos de media y estáticos locales
 mediafiles/
-"imagenes para el proyecto"/
 
 # Archivos de entorno (si los hubiera)
 .env
