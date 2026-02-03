@@ -3,78 +3,60 @@
 
 {% block page_styles %}
 <style>
-    body {
-        background-color: #f8f9fa; /* Fondo gris claro para el área de contenido */
+    :root {
+        --sidebar-width: 280px;
+        --uteq-green: #00693E;
     }
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: var(--sidebar-width, 280px);
-        background-color: var(--uteq-green, #00693E);
-        color: #fff;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        z-index: 1050;
-        transition: transform 0.3s ease-in-out;
+    body {
+        background-color: #f8f9fa;
     }
     .main-content {
-        margin-left: var(--sidebar-width, 280px);
-        padding: 0;
+        transition: margin-left .3s ease;
     }
     .top-header {
         background-color: #fff;
         padding: 0.75rem 1.5rem;
         border-bottom: 1px solid #dee2e6;
-        height: 70px; /* Altura fija para el header */
+        height: 70px;
     }
-    .sidebar .nav-link {
+    .offcanvas.offcanvas-start {
+        width: var(--sidebar-width);
+        background-color: var(--uteq-green);
+        color: #fff;
+    }
+    .offcanvas .nav-link {
         color: rgba(255, 255, 255, 0.8);
         padding: 0.75rem 1rem;
         border-radius: 0.375rem;
         font-size: 1.05rem;
     }
-    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+    .offcanvas .nav-link:hover, .sidebar .nav-link.active {
         background-color: rgba(255, 255, 255, 0.1);
         color: #fff;
     }
-    .sidebar-header {
+    .offcanvas-title {
         font-size: 1.5rem;
         font-weight: bold;
-        margin-bottom: 2rem;
-        text-align: center;
     }
     .sidebar-footer {
-        margin-top: auto;
         font-size: 0.8rem;
-        text-align: center;
         color: rgba(255, 255, 255, 0.5);
     }
-    /* Responsive */
-    @media (max-width: 991.98px) {
-        .sidebar {
-            transform: translateX(-100%);
-        }
-        .sidebar.is-open {
-            transform: translateX(0);
-        }
+
+    /* Estilos para pantallas grandes (menú lateral visible) */
+    @media (min-width: 992px) {
         .main-content {
-            margin-left: 0;
+            margin-left: var(--sidebar-width);
         }
-        .sidebar-overlay {
-            position: fixed;
+        .offcanvas.offcanvas-start {
+            transform: none;
+            visibility: visible !important;
             top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1049;
-            display: none;
+            position: fixed;
+            height: 100vh;
         }
-        .sidebar.is-open ~ .sidebar-overlay {
-            display: block;
+        .offcanvas-backdrop {
+            display: none;
         }
     }
 </style>
@@ -82,54 +64,56 @@
 
 
 {% block body_content %}
-    <!-- MENÚ LATERAL FIJO -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <i class="bi bi-cpu"></i> Directorio de IAs
+    <!-- MENÚ LATERAL (AHORA OFFCANVAS DE BOOTSTRAP) -->
+    <aside class="sidebar offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">
+                <i class="bi bi-cpu"></i> Directorio de IAs
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         
-        <ul class="nav flex-column mb-auto">
-            <li class="nav-item"><a href="{% url 'recursos:dashboard' %}" class="nav-link"><i class="bi bi-house-door-fill me-2"></i>Dashboard</a></li>
-            {% if user.is_authenticated and user.perfil %}
-            <li class="nav-item"><a href="{% url 'recursos:favorite_resources_list' %}" class="nav-link"><i class="bi bi-star-fill me-2"></i>Mis Favoritos</a></li>
-            {% endif %}
-            
-            {# --- Lógica de Navegación por Rol --- #}
-            {% if user.is_staff or user.is_superuser %}
-                {# Para Admins/Gestores, mostramos la lista de todas las carreras #}
-                <li class="nav-item"><a href="{% url 'recursos:career_list' %}" class="nav-link"><i class="bi bi-journals me-2"></i>Todas las Carreras</a></li>
-            {% else %}
-                {# Para Estudiantes/Docentes, mostramos un enlace directo a los recursos de SU carrera #}
-                {% if user.perfil.carrera %}
-                <li class="nav-item"><a href="{% url 'recursos:resource_type_list' pk=user.perfil.carrera.pk %}" class="nav-link"><i class="bi bi-collection-fill me-2"></i>Mis Recursos</a></li>
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <ul class="nav flex-column mb-auto p-3">
+                <li class="nav-item"><a href="{% url 'recursos:dashboard' %}" class="nav-link"><i class="bi bi-house-door-fill me-2"></i>Dashboard</a></li>
+                {% if user.is_authenticated and user.perfil %}
+                <li class="nav-item"><a href="{% url 'recursos:favorite_resources_list' %}" class="nav-link"><i class="bi bi-star-fill me-2"></i>Mis Favoritos</a></li>
                 {% endif %}
-            {% endif %}
+                
+                {# --- Lógica de Navegación por Rol --- #}
+                {% if user.is_staff or user.is_superuser %}
+                    <li class="nav-item"><a href="{% url 'recursos:career_list' %}" class="nav-link"><i class="bi bi-journals me-2"></i>Todas las Carreras</a></li>
+                {% else %}
+                    {% if user.perfil.carrera %}
+                    <li class="nav-item"><a href="{% url 'recursos:resource_type_list' pk=user.perfil.carrera.pk %}" class="nav-link"><i class="bi bi-collection-fill me-2"></i>Mis Recursos</a></li>
+                    {% endif %}
+                {% endif %}
 
-            {% if user|in_group:"Docente" or user.is_superuser %}
-            <li class="nav-item"><a href="{% url 'recursos:sugerir_recurso' %}" class="nav-link"><i class="bi bi-lightbulb me-2"></i>Sugerir Recurso</a></li>
-            {% endif %}
+                {% if user|in_group:"Docente" or user.is_superuser %}
+                <li class="nav-item"><a href="{% url 'recursos:sugerir_recurso' %}" class="nav-link"><i class="bi bi-lightbulb me-2"></i>Sugerir Recurso</a></li>
+                {% endif %}
+                
+                {% if user.is_staff %}
+                <li class="nav-item mt-4"><small class="text-uppercase px-1" style="color: rgba(255,255,255,0.4); font-weight: bold;">Gestión</small></li>
+                {% if perms.auth.view_user %}<li class="nav-item"><a href="/admin/auth/user/" class="nav-link"><i class="bi bi-people-fill me-2"></i>Usuarios</a></li>{% endif %}
+                {% if perms.recursos.view_carrera %}<li class="nav-item"><a href="/admin/recursos/carrera/" class="nav-link"><i class="bi bi-journal-bookmark-fill me-2"></i>Carreras</a></li>{% endif %}
+                {% if perms.recursos.view_recurso %}<li class="nav-item"><a href="/admin/recursos/recurso/" class="nav-link"><i class="bi bi-tools me-2"></i>Recursos</a></li>{% endif %}
+                {% endif %}
+            </ul>
             
-            {% if user.is_staff %}
-            <li class="nav-item mt-4"><small class="text-uppercase px-1" style="color: rgba(255,255,255,0.4); font-weight: bold;">Gestión</small></li>
-            {% if perms.auth.view_user %}<li class="nav-item"><a href="/admin/auth/user/" class="nav-link"><i class="bi bi-people-fill me-2"></i>Usuarios</a></li>{% endif %}
-            {% if perms.recursos.view_carrera %}<li class="nav-item"><a href="/admin/recursos/carrera/" class="nav-link"><i class="bi bi-journal-bookmark-fill me-2"></i>Carreras</a></li>{% endif %}
-            {% if perms.recursos.view_recurso %}<li class="nav-item"><a href="/admin/recursos/recurso/" class="nav-link"><i class="bi bi-tools me-2"></i>Recursos</a></li>{% endif %}
-            {% endif %}
-        </ul>
-        
-        <div class="sidebar-footer">
-            <hr style="color: rgba(255,255,255,0.2);">
-            UTEQ © 2025
+            <div class="sidebar-footer p-3">
+                <hr style="color: rgba(255,255,255,0.2);">
+                UTEQ © 2025
+            </div>
         </div>
     </aside>
-    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
         <!-- HEADER SUPERIOR -->
         <header class="top-header d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-                <button class="btn d-lg-none me-2" type="button" onclick="toggleSidebar()">
+                <button class="btn d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
                     <i class="bi bi-list fs-3"></i>
                 </button>
                 <a href="{% url 'recursos:home' %}">
@@ -173,8 +157,7 @@
 
 {% block page_scripts %}
 <script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('is-open');
-    }
+    // El código para el Offcanvas de Bootstrap ya está incluido en el bundle de Bootstrap.
+    // No se necesita JavaScript adicional aquí para el menú lateral.
 </script>
 {% endblock %}
