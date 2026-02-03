@@ -79,16 +79,21 @@
                                 <div id="form-errors" class="alert alert-danger d-none"></div>
                                 <div class="mb-3">
                                     <label class="form-label d-block">{{ form.puntuacion.label }}</label>
-                                    <div class="d-flex align-items-center">
-                                        {% for radio in form.puntuacion %}
-                                        <div class="form-check form-check-inline me-3">
-                                            {{ radio.tag }}
-                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                                {{ radio.choice_label }} <i class="bi bi-star-fill" style="color: #FFC107;"></i>
-                                            </label>
-                                        </div>
-                                        {% endfor %}
+                                    
+                                    <!-- Contenedor para las estrellas interactivas -->
+                                    <div id="star-rating-container" class="fs-3" style="cursor: pointer; color: #FFC107;">
+                                        <i class="bi bi-star rating-star" data-value="1"></i>
+                                        <i class="bi bi-star rating-star" data-value="2"></i>
+                                        <i class="bi bi-star rating-star" data-value="3"></i>
+                                        <i class="bi bi-star rating-star" data-value="4"></i>
+                                        <i class="bi bi-star rating-star" data-value="5"></i>
                                     </div>
+
+                                    <!-- Radios originales, ahora ocultos -->
+                                    <div class="d-none">
+                                        {{ form.puntuacion }}
+                                    </div>
+                                    
                                     {% if form.puntuacion.errors %}
                                         <div class="text-danger small mt-1">
                                             {% for error in form.puntuacion.errors %}
@@ -245,6 +250,50 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error de red o del servidor en favoritos:', error);
             });
+        });
+    }
+
+    // --- Lógica para las estrellas interactivas ---
+    const starContainer = document.getElementById('star-rating-container');
+    if (starContainer) {
+        const stars = Array.from(starContainer.querySelectorAll('.rating-star'));
+        const radioButtons = document.querySelectorAll('input[name="{{ form.puntuacion.name }}"]');
+
+        const updateStars = (rating) => {
+            stars.forEach((star) => {
+                const starValue = parseInt(star.dataset.value);
+                if (starValue <= rating) {
+                    star.classList.remove('bi-star');
+                    star.classList.add('bi-star-fill');
+                } else {
+                    star.classList.remove('bi-star-fill');
+                    star.classList.add('bi-star');
+                }
+            });
+        };
+
+        starContainer.addEventListener('mouseover', e => {
+            if (e.target.classList.contains('rating-star')) {
+                const rating = parseInt(e.target.dataset.value);
+                updateStars(rating);
+            }
+        });
+
+        starContainer.addEventListener('mouseout', () => {
+            const selectedRadio = document.querySelector('input[name="{{ form.puntuacion.name }}"]:checked');
+            const currentRating = selectedRadio ? parseInt(selectedRadio.value) : 0;
+            updateStars(currentRating);
+        });
+
+        starContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('rating-star')) {
+                const rating = parseInt(e.target.dataset.value);
+                const radioToSelect = Array.from(radioButtons).find(r => r.value == rating);
+                if (radioToSelect) {
+                    radioToSelect.checked = true;
+                    updateStars(rating);
+                }
+            }
         });
     }
 });
