@@ -143,7 +143,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 if visit.recurso.id not in seen_recurso_ids:
                     unique_visited_recursos.append(visit)
                     seen_recurso_ids.add(visit.recurso.id)
-                    if len(unique_visited_recursos) >= 5:
+                    if len(unique_visited_recursos) >= 6:
                         break
             
             context['historial_visitas'] = unique_visited_recursos
@@ -151,7 +151,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         if user.is_superuser or user.groups.filter(name='Gestor de Contenido').exists():
             context['dashboard_type'] = 'admin_gestor'
             context['recursos_pendientes'] = Recurso.objects.filter(estado=Recurso.ESTADO_PENDIENTE).count()
-            context['carreras_con_recursos'] = Carrera.objects.annotate(num_recursos=Count('recursos')).filter(num_recursos__gt=0).order_by('-num_recursos')[:5]
+            context['carreras_con_recursos'] = Carrera.objects.annotate(num_recursos=Count('recursos')).filter(num_recursos__gt=0).order_by('-num_recursos')[:6]
 
         elif user.groups.filter(name='Docente').exists():
             context['dashboard_type'] = 'docente'
@@ -164,7 +164,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 context['recursos_mi_carrera_aprobados'] = Recurso.objects.filter(
                     carreras=user.perfil.carrera,
                     estado=Recurso.ESTADO_APROBADO
-                )[:5]
+                )[:6]
 
         else: # Estudiantes
             context['dashboard_type'] = 'estudiante'
@@ -173,7 +173,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 context['recursos_mi_carrera'] = Recurso.objects.filter(
                     carreras=user.perfil.carrera,
                     estado=Recurso.ESTADO_APROBADO
-                )[:5]
+                )[:6]
             
         return context
 

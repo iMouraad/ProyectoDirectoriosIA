@@ -39,7 +39,6 @@
         </div>
     </div>
     {# Historial de Visitas (al lado de bienvenida) #}
-    {% if historial_visitas %}
     <div class="col-md-6 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
@@ -54,12 +53,15 @@
                             </div>
                             <span class="badge bg-info rounded-pill">{{ visita.recurso.get_tipo_display }}</span>
                         </a>
+                    {% empty %}
+                        <div class="list-group-item">
+                            <p class="text-muted mb-0">Aún no has visitado ningún recurso.</p>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
 
 
