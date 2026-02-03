@@ -131,7 +131,13 @@ STATICFILES_DIRS = [
 # Directorio donde Django recolectará todos los archivos estáticos para producción
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Configuración de Almacenamiento para Django >= 4.2
 STORAGES = {
+    # Media files (user uploads) -> a Cloudinary
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    # Static files (CSS, JS, etc.) -> con Whitenoise
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
@@ -150,7 +156,7 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
 }
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# DEFAULT_FILE_STORAGE está obsoleto desde Django 4.2, se configura dentro de STORAGES.
 
 # Configuraci�n de Timeout de Sesi�n por Inactividad
 SESSION_COOKIE_AGE = 1800  # 30 minutos en segundos
@@ -176,20 +182,7 @@ LOGGING = {
     },
 }
 
-# Configuración de Logging para mostrar tracebacks completos en los logs de Render
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'ERROR',
-    },
-}
+
 
 # --- Configuración de Email para Producción (usando Gmail) ---
 # ADVERTENCIA: No es seguro guardar contraseñas en este archivo en producción.
