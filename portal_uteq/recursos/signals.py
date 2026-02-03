@@ -13,8 +13,11 @@ def update_streak_and_assign_missions(sender, request, user, **kwargs):
     if hasattr(user, 'perfil'):
         with transaction.atomic():
             profile = Perfil.objects.select_for_update().get(pk=user.perfil.pk)
-            current_datetime = timezone.now() # Usar timezone.now() de Django
-            current_date = current_datetime.date()
+            current_datetime = timezone.now()
+            
+            # Convertir a la zona horaria local para obtener la fecha correcta
+            local_datetime = timezone.localtime(current_datetime)
+            current_date = local_datetime.date()
 
             # --- Lógica de Racha Temporal por Minutos ---
             if profile.ultima_conexion_racha:

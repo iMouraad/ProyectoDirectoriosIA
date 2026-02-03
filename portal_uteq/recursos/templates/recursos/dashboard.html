@@ -12,7 +12,7 @@
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">Tareas de {{ user.first_name|default:user.username }}</h5>
-                <p class="card-text text-muted">Aquí encontrarás un resumen de tu actividad y enlaces rápidos relevantes para tu rol.</p>
+                <p class="card-text text-muted">En este espacio encontrarás tus tareas, un resumen de tu actividad y accesos directos a los contenidos más importantes de acuerdo con tu rol.</p>
                 {% if user.is_authenticated %}
                 <hr>
                 <div class="d-flex justify-content-around mt-3">
