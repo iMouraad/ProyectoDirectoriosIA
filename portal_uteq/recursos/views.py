@@ -221,7 +221,7 @@ class ResourceTypeListView(LoginRequiredMixin, TemplateView):
         context['tipos_de_recurso'] = tipos_metadata
         return context
 
-from django.db.models import Q, Avg, Value
+from django.db.models import Q, Avg, Value, Exists, OuterRef
 from django.db.models.functions import Coalesce
 
 # ... (el resto de las importaciones se mantienen igual)
@@ -238,9 +238,9 @@ class ResourceListView(LoginRequiredMixin, ListView):
         # Parámetros de la URL
         query = self.request.GET.get('q')
         sort_by = self.request.GET.get('sort', 'recientes')
+        user = self.request.user
 
         # 1. Anotación base para la calificación promedio
-        # Se anota siempre para que el dato esté disponible en la plantilla
         queryset = Recurso.objects.filter(
             carreras__id=self.kwargs['pk'],
             tipo=self.kwargs['tipo'],
@@ -255,12 +255,25 @@ class ResourceListView(LoginRequiredMixin, ListView):
                 Q(nombre__icontains=query) | Q(descripcion__icontains=query)
             )
 
-        # 3. Lógica de Ordenamiento
-        if sort_by == 'valorados':
-            # Ordena por la anotación y luego por fecha como desempate
-            queryset = queryset.order_by('-avg_rating', '-fecha_creacion')
-        else: # 'recientes' o cualquier otro valor
-            queryset = queryset.order_by('-fecha_creacion')
+        # 3. Lógica de Ordenamiento con Prioridad para Favoritos
+        if user.is_authenticated and hasattr(user, 'perfil'):
+            # Anotar si el recurso es favorito para el usuario actual
+            favoritos_del_usuario = user.perfil.recursos_favoritos.all()
+            queryset = queryset.annotate(
+                is_favorite=Exists(favoritos_del_usuario.filter(pk=OuterRef('pk')))
+            )
+            
+            # Ordenar por favoritos primero, luego por el criterio seleccionado
+            if sort_by == 'valorados':
+                queryset = queryset.order_by('-is_favorite', '-avg_rating', '-fecha_creacion')
+            else: # 'recientes' o cualquier otro valor
+                queryset = queryset.order_by('-is_favorite', '-fecha_creacion')
+        else:
+            # Ordenamiento original si el usuario no está logueado o no tiene perfil
+            if sort_by == 'valorados':
+                queryset = queryset.order_by('-avg_rating', '-fecha_creacion')
+            else:
+                queryset = queryset.order_by('-fecha_creacion')
 
         return queryset.distinct()
         
